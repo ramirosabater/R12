@@ -125,6 +125,9 @@ table.hist td b{font-weight:600}
 .aitext{display:flex;flex-direction:column;gap:6px;font-size:14px;max-width:70ch}
 .aitext p,.aitext ul{margin:0} .aitext ul{padding-left:18px;display:flex;flex-direction:column;gap:3px}
 .aitext h4{margin-top:6px}
+.filters{padding:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+.filters .fx{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;min-height:36px}
+.filters select{background:var(--panel)}
 .custom-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;grid-column:1/-1}
 .toprow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 @media (max-width:560px){
@@ -175,7 +178,43 @@ const ideal = x => (x.s1&&x.s2&&x.s3) ? x.s1+x.s2+x.s3 : null;
 const fmtD = d => { const [y,m,dd]=d.split("-"); return `${+dd}/${+m}/${y.slice(2)}`; };
 function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,2400); }
 const byOrder = (a,b) => a.fecha.localeCompare(b.fecha) || a.evento.localeCompare(b.evento) || (a.orden||0)-(b.orden||0);
-const filt = () => state.sesiones.filter(s => state.piloto==="todos" || s.piloto===state.piloto).sort(byOrder);
+/* ---------- filtros ---------- */
+const F0={circ:"",tipo:"",periodo:"",estado:""};
+state.f={...F0}; try{ Object.assign(state.f, JSON.parse(localStorage.getItem("box12f")||"{}")); }catch(_){}
+function saveF(){ try{ localStorage.setItem("box12f", JSON.stringify(state.f)); }catch(_){} }
+const nFiltros=()=>Object.keys(F0).filter(k=>state.f[k]).length;
+function fbase(){
+  const f=state.f; let ss=state.sesiones;
+  if(f.circ) ss=ss.filter(s=>s.circuito===f.circ);
+  if(f.tipo) ss=ss.filter(s=>f.tipo==="carrera"?(s.tipo==="serie"||s.tipo==="final"):s.tipo===f.tipo);
+  if(f.estado==="ok") ss=ss.filter(s=>s.estado==="ok"&&s.mejor);
+  else if(f.estado==="NT") ss=ss.filter(s=>s.estado!=="ok");
+  else if(f.estado==="psi") ss=ss.filter(s=>s.auto&&["pfDD","pfDI","pfTD","pfTI","pcDD","pcDI","pcTD","pcTI"].some(k=>s.auto[k]));
+  if(f.periodo){
+    if(/^\d{4}$/.test(f.periodo)) ss=ss.filter(s=>s.fecha.startsWith(f.periodo));
+    else { const n=+f.periodo.slice(1); const evs=[...new Map(state.sesiones.map(s=>[s.evento,s.fecha])).entries()].sort((a,b)=>b[1].localeCompare(a[1])).slice(0,n).map(e=>e[0]); ss=ss.filter(s=>evs.includes(s.evento)); }
+  }
+  return ss;
+}
+const filt = () => fbase().filter(s => state.piloto==="todos" || s.piloto===state.piloto).sort(byOrder);
+function filterBar(){
+  const circs=[...new Set(state.sesiones.map(s=>s.circuito))].sort();
+  const anios=[...new Set(state.sesiones.map(s=>s.fecha.slice(0,4)))].sort().reverse();
+  const nEv=new Set(state.sesiones.map(s=>s.evento)).size, f=state.f, n=nFiltros();
+  const opt=(v,l,cur)=>`<option value="${esc(v)}" ${cur===v?"selected":""}>${esc(l)}</option>`;
+  return `<section class="panel filters" aria-label="Filtros">
+    <div class="f"><label for="f_circ">Circuito</label><select id="f_circ" data-f="circ">${opt("","Todos",f.circ)}${circs.map(c=>opt(c,c,f.circ)).join("")}</select></div>
+    <div class="f"><label for="f_tipo">Sesión</label><select id="f_tipo" data-f="tipo">${opt("","Todas",f.tipo)}${opt("entrenamiento","Entrenamientos",f.tipo)}${opt("tanques","Tanques llenos",f.tipo)}${opt("clasificacion","Clasificación",f.tipo)}${opt("carrera","Series y finales",f.tipo)}${opt("serie","Solo series",f.tipo)}${opt("final","Solo finales",f.tipo)}${opt("acumulado","Acumulados",f.tipo)}</select></div>
+    <div class="f"><label for="f_per">Período</label><select id="f_per" data-f="periodo">${opt("","Todo el historial",f.periodo)}${[3,5,10].filter(k=>k<nEv).map(k=>opt("u"+k,`Últimas ${k} fechas`,f.periodo)).join("")}${anios.map(a=>opt(a,"Temporada "+a,f.periodo)).join("")}</select></div>
+    <div class="f"><label for="f_est">Resultado</label><select id="f_est" data-f="estado">${opt("","Todos",f.estado)}${opt("ok","Solo con tiempo",f.estado)}${opt("NT","Sin tiempo / no clasificado",f.estado)}${opt("psi","Con presiones cargadas",f.estado)}</select></div>
+    <div class="fx"><span class="hint">${filt().length} sesiones</span>${n?`<button type="button" class="btn" id="f_clear">Quitar filtros (${n})</button>`:""}</div>
+  </section>`;
+}
+function bindFilters(v){
+  v.querySelectorAll("[data-f]").forEach(el=>el.addEventListener("change",()=>{ state.f[el.dataset.f]=el.value; saveF(); state.open=null; render(); }));
+  const c=v.querySelector("#f_clear"); if(c) c.onclick=()=>{ state.f={...F0}; saveF(); render(); };
+}
+const sinResultados=()=>`<div class="panel empty"><h2>No hay sesiones con estos filtros</h2><p>Probá con otro circuito o período.</p><button class="btn primary" id="f_clear2">Quitar filtros</button></div>`;
 function eventos(){ const m=new Map(); for(const s of state.sesiones){ if(!m.has(s.evento)) m.set(s.evento,{id:s.evento,nombre:s.eventoNombre,fechaN:s.fechaN,circuito:s.circuito,km:s.km,fecha:s.fecha,pilotos:new Set()}); const e=m.get(s.evento); e.pilotos.add(s.piloto); if(s.fecha<e.fecha) e.fecha=s.fecha; } return [...m.values()].sort((a,b)=>b.fecha.localeCompare(a.fecha)); }
 
 /* ---------- navigation ---------- */
@@ -197,7 +236,7 @@ function render(){
 }
 
 function stats(p){
-  const ss=state.sesiones.filter(s=>s.piloto===p);
+  const ss=fbase().filter(s=>s.piloto===p);
   const conT=ss.filter(s=>s.mejor&&s.tipo!=="acumulado");
   const clas=ss.filter(s=>s.tipo==="clasificacion"&&s.pos&&s.estado==="ok").map(s=>s.pos);
   const fin=ss.filter(s=>s.tipo==="final");
@@ -212,6 +251,7 @@ function stats(p){
 function rResumen(v){
   const ps = state.piloto==="todos" ? ["acosta","sandoval"] : [state.piloto];
   if(!state.sesiones.length){ v.innerHTML=emptyHTML(); return; }
+  if(!filt().length){ v.innerHTML=filterBar()+sinResultados(); bindFilters(v); v.querySelector("#f_clear2").onclick=()=>{ state.f={...F0}; saveF(); render(); }; return; }
   const cards = ps.map(p=>{ const s=stats(p); if(!s.n) return `<section class="panel pcard" style="--c:${PIL[p].c}"><header><h2>${PIL[p].n} <span class="lbl">#${PIL[p].num}</span></h2></header><p class="note">Todavía no hay sesiones cargadas.</p></section>`;
     return `<section class="panel pcard" style="--c:${PIL[p].c}">
       <header><h2>${PIL[p].n} <span class="lbl">#${PIL[p].num}</span></h2><span class="lbl">${s.ev} ${s.ev===1?"fecha":"fechas"} · ${s.n} sesiones</span></header>
@@ -222,7 +262,8 @@ function rResumen(v){
         <div><span class="lbl">Sesión más cerca</span><b>${s.best?"+"+gapPct(s.best).toFixed(2)+"%":"—"}</b><span class="s">${s.best?esc(s.best.sesion)+" · "+esc(s.best.circuito):""}</span></div>
         <div><span class="lbl">Vuelta ideal vs real</span><b>${s.potP!=null?"−"+s.potP.toFixed(3)+" s":"—"}</b><span class="s">promedio que queda en los sectores</span></div>
       </div></section>`; }).join("");
-  v.innerHTML = `<div class="toprow"><h2>Historial</h2><span class="hint">${state.piloto==="todos"?"Los dos pilotos":PIL[state.piloto].n} · ${eventos().filter(e=>state.piloto==="todos"||e.pilotos.has(state.piloto)).length} fines de semana</span></div>
+  v.innerHTML = `<div class="toprow"><h2>Historial</h2><span class="hint">${state.piloto==="todos"?"Los dos pilotos":PIL[state.piloto].n} · ${new Set(filt().map(s=>s.evento)).size} ${new Set(filt().map(s=>s.evento)).size===1?"fin de semana":"fines de semana"}${nFiltros()?" · filtrado":""}</span></div>
+    ${filterBar()}
     <div class="stats">${cards}</div>
     <section class="panel" style="padding:14px;display:flex;flex-direction:column;gap:10px"><div class="toprow"><h3>Fin de semana por fin de semana</h3><span class="lbl">posición · mejor vuelta</span></div>${tablaFindes()}</section>
     <section class="panel chartbox"><div class="toprow"><h3>Distancia al más rápido de cada sesión</h3><span class="lbl">% sobre la mejor vuelta</span></div>
@@ -233,6 +274,7 @@ function rResumen(v){
       <div class="scroll">${chartPos()}</div></section>
     <section class="panel" style="padding:14px;display:flex;flex-direction:column;gap:10px"><div class="toprow"><h3>Mejor vuelta por circuito</h3><span class="lbl">récord propio</span></div>${tablaRecords()}</section>
     <section class="panel" style="padding:14px;display:flex;flex-direction:column;gap:10px"><div class="toprow"><h3>Historial de presiones</h3><span class="lbl">psi · DI DD / TI TD</span></div>${tablaPresiones()}</section>`;
+  bindFilters(v);
   v.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>{ state.open=b.dataset.goto; go("tiempos"); setTimeout(()=>{ const el=document.querySelector(`[data-id="${CSS.escape(b.dataset.goto)}"]`); el&&el.scrollIntoView({block:"center"}); },50); }));
 }
 
@@ -299,13 +341,14 @@ function chartPos(){
 }
 
 function rTiempos(v){
-  const ss=filt(); if(!ss.length){ v.innerHTML=emptyHTML(); return; }
+  if(!state.sesiones.length){ v.innerHTML=emptyHTML(); return; }
+  const ss=filt(); if(!ss.length){ v.innerHTML=filterBar()+sinResultados(); bindFilters(v); v.querySelector("#f_clear2").onclick=()=>{ state.f={...F0}; saveF(); render(); }; return; }
   const groups=new Map(); for(const s of ss){ const k=s.evento+"|"+s.piloto; if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(s); }
   const html=[...groups.values()].sort((a,b)=>b[0].fecha.localeCompare(a[0].fecha)).map(list=>{ const e=list[0];
     return `<section class="panel event"><header><div><h2>${esc(e.eventoNombre)}</h2><div class="meta">${esc(e.fechaN)} · ${esc(e.circuito)} ${e.km?e.km.toString().replace(".",",")+" km":""} · desde ${fmtD(e.fecha)}</div></div>
       <span class="lbl" style="display:flex;align-items:center;gap:6px"><i class="dot ${e.piloto}"></i>${PIL[e.piloto].n}</span></header>
       ${list.map(rowHTML).join("")}</section>`; }).join("");
-  v.innerHTML = html;
+  v.innerHTML = filterBar()+html; bindFilters(v);
   v.querySelectorAll(".row>button").forEach(b=>b.addEventListener("click",()=>{ state.open = state.open===b.dataset.id?null:b.dataset.id; render(); }));
   v.querySelectorAll("[data-edit]").forEach(b=>b.addEventListener("click",()=>{ state.edit=b.dataset.edit; go("cargar"); }));
   v.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>delSesion(b)));
