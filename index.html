@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#132030">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Box R12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23132030'/%3E%3Ctext x='32' y='44' font-family='Arial' font-weight='700' font-size='30' text-anchor='middle' fill='%23fff'%3ER12%3C/text%3E%3C/svg%3E">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Box R12</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: planilla de cronometraje para el celular — cabecera con selector de piloto, pestañas, filas tipo hoja de tiempos */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --ink:#132030; --muted:#5d6b7a; --line:#d6dde4; --soft:#e4e9ee;
+  --accent:#1659c7; --lor:#c8372d; --seb:#1a7f8e;
+  --ok:#1d7a46; --warn:#b26a00; --bad:#b3261e;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f151c; --panel:#172029; --ink:#e6edf3; --muted:#93a1af; --line:#2a3642; --soft:#1f2a35;
+  --accent:#6ea1ff; --lor:#ff7a6e; --seb:#4fc3d1; --ok:#5fcf8c; --warn:#f0b04a; --bad:#ff8a80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151c; --panel:#172029; --ink:#e6edf3; --muted:#93a1af; --line:#2a3642; --soft:#1f2a35;
+  --accent:#6ea1ff; --lor:#ff7a6e; --seb:#4fc3d1; --ok:#5fcf8c; --warn:#f0b04a; --bad:#ff8a80; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-block:12px 0;display:flex;flex-direction:column;gap:10px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:.01em;margin:0;line-height:1}
+.brand .num{font-family:var(--f-display);font-weight:700;font-size:28px;color:var(--panel);background:var(--ink);padding:0 8px;border-radius:3px;line-height:1.1}
+.brand small{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.seg{display:flex;gap:4px;background:var(--soft);padding:3px;border-radius:8px;width:max-content;max-width:100%}
+.seg button{border:0;background:transparent;color:var(--muted);font:600 13px var(--f-body);padding:6px 12px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.dot.acosta{background:var(--lor)} .dot.sandoval{background:var(--seb)}
+nav.tabs{display:flex;gap:2px;overflow-x:auto}
+nav.tabs button{border:0;background:none;font:600 15px var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 12px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-top:18px;display:flex;flex-direction:column;gap:22px}
+h2{font-family:var(--f-display);font-weight:700;font-size:22px;letter-spacing:.02em;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.04em;text-transform:uppercase;margin:0;color:var(--muted)}
+.lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mono,.t{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.pcard{padding:16px;display:flex;flex-direction:column;gap:12px;border-top:4px solid var(--c)}
+.pcard header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.pcard h2{color:var(--c)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.kv div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.kv b{font-family:var(--f-mono);font-weight:600;font-size:18px}
+.kv span.s{font-size:12px;color:var(--muted)}
+.chartbox{padding:14px 12px 8px;display:flex;flex-direction:column;gap:8px}
+.chartbox .scroll{overflow-x:auto}
+svg text{font-family:var(--f-mono)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.event{display:flex;flex-direction:column}
+.event>header{padding:14px 14px 10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.event>header .meta{color:var(--muted);font-size:13px}
+.row{border-bottom:1px solid var(--soft)}
+.row:last-child{border-bottom:0}
+.row>button{width:100%;border:0;background:none;color:inherit;text-align:left;cursor:pointer;padding:10px 14px;display:grid;grid-template-columns:minmax(0,1.6fr) 64px minmax(0,1fr) 64px;gap:8px;align-items:center;font:inherit}
+.row>button:hover{background:var(--soft)}
+.row .name{display:flex;flex-direction:column;min-width:0}
+.row .name strong{font-weight:600;font-size:14px}
+.row .name span{font-size:12px;color:var(--muted)}
+.pos{font-family:var(--f-display);font-weight:700;font-size:22px;text-align:center;line-height:1}
+.pos small{display:block;font:500 10px var(--f-mono);color:var(--muted)}
+.lap{font-family:var(--f-mono);font-size:15px;font-weight:600;text-align:right}
+.gap{font-family:var(--f-mono);font-size:12px;text-align:right}
+.chip{display:inline-block;font:600 10px var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;border:1px solid currentColor}
+.chip.nt{color:var(--bad)} .chip.ok{color:var(--ok)} .chip.st{color:var(--warn)}
+.detail{padding:4px 14px 14px;display:flex;flex-direction:column;gap:10px}
+.sectors{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.sectors div{background:var(--soft);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.sectors b{font-family:var(--f-mono);font-size:14px}
+.note{font-size:13px;color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);font:600 13px var(--f-body);padding:8px 14px;border-radius:6px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:default}
+form{display:flex;flex-direction:column;gap:18px}
+fieldset{border:1px solid var(--line);border-radius:8px;padding:14px;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;background:var(--panel)}
+legend{font:700 15px var(--f-display);letter-spacing:.06em;text-transform:uppercase;padding:0 6px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.wide{grid-column:1/-1}
+.f label{font-size:12px;color:var(--muted)}
+input,select,textarea{font:14px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 9px;width:100%;min-width:0}
+input.t{font-family:var(--f-mono)}
+textarea{min-height:70px;resize:vertical}
+.hint{font-size:12px;color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:6px;font-size:14px;z-index:20}
+.empty{padding:28px 18px;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:8px;align-items:center}
+.tablewrap{overflow-x:auto}
+table.cmp{border-collapse:collapse;font-size:13px;min-width:100%}
+table.cmp th,table.cmp td{border-bottom:1px solid var(--soft);padding:7px 10px;text-align:left;white-space:nowrap}
+table.cmp th{font-weight:600;color:var(--muted);position:sticky;left:0;background:var(--panel)}
+table.cmp thead th{font:700 13px var(--f-display);letter-spacing:.04em;text-transform:uppercase;color:var(--ink);position:static}
+table.cmp td{font-family:var(--f-mono)}
+table.hist td,table.hist th{vertical-align:middle}
+table.hist .c{text-align:center}
+table.hist tbody th{color:var(--ink);font-weight:500}
+.sub{font-size:11px;color:var(--muted);font-family:var(--f-body)}
+.evn{display:flex;align-items:center;gap:8px}
+.cellbtn{border:0;background:none;color:inherit;font:inherit;cursor:pointer;padding:2px 4px;border-radius:4px;text-decoration:underline dotted var(--line);text-underline-offset:3px}
+.cellbtn:hover{background:var(--soft)}
+table.hist td b{font-weight:600}
+.insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.ins{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--k);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.ins.clave{--k:var(--accent)} .ins.ojo{--k:var(--warn)} .ins.bien{--k:var(--ok)} .ins.dato{--k:var(--line)}
+.ins .lbl{color:var(--k)} .ins.dato .lbl{color:var(--muted)}
+.ins h4,.aitext h4{font:700 18px var(--f-display);letter-spacing:.02em;margin:0}
+.ins p{margin:0;font-size:14px}
+.aitext{display:flex;flex-direction:column;gap:6px;font-size:14px;max-width:70ch}
+.aitext p,.aitext ul{margin:0} .aitext ul{padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.aitext h4{margin-top:6px}
+.custom-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;grid-column:1/-1}
+.toprow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+@media (max-width:560px){
+  .row>button{grid-template-columns:minmax(0,1fr) 46px 86px;}
+  .row>button .gap{display:none}
+  .sectors{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><h1>Box R12</h1><small>Acosta #12 · Sandoval #17 · FCHA</small></div>
+    <div class="seg" role="group" aria-label="Piloto" id="pilotSeg">
+      <button type="button" data-p="todos" aria-pressed="true">Ambos</button>
+      <button type="button" data-p="acosta" aria-pressed="false"><i class="dot acosta"></i>Acosta #12</button>
+      <button type="button" data-p="sandoval" aria-pressed="false"><i class="dot sandoval"></i>Sandoval #17</button>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-t="resumen" aria-selected="true">Historial</button>
+      <button role="tab" data-t="tiempos" aria-selected="false">Tiempos</button>
+      <button role="tab" data-t="setup" aria-selected="false">Setup</button>
+      <button role="tab" data-t="reco" aria-selected="false">Recomendaciones</button>
+      <button role="tab" data-t="cargar" aria-selected="false">Cargar sesión</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap"><main id="view"><div class="panel empty">Conectando con la base de datos…</div></main></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const PIL = {acosta:{n:"Sebastián Lorenzo Acosta",s:"Acosta",num:12,c:"var(--lor)"}, sandoval:{n:"Sebastián Sandoval",s:"Sandoval",num:17,c:"var(--seb)"}};
+const TIPOS = {entrenamiento:"Entrenamiento",tanques:"Tanques llenos",clasificacion:"Clasificación",serie:"Serie",final:"Final",acumulado:"Acumulado"};
+const state = {piloto:"todos", tab:"resumen", sesiones:[], setups:{}, open:null, edit:null, setupKey:null, dbOk:null};
+let db = null; state.dbErr=null;
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function parseT(v){ if(v==null) return null; v=String(v).trim().replace(",","."); if(!v) return null;
+  const m=v.match(/^(?:(\d+):)?(\d+(?:\.\d+)?)$/); if(!m) return NaN; return (m[1]?+m[1]*60:0)+ +m[2]; }
+function fmtT(s){ if(s==null||isNaN(s)) return "—"; const m=Math.floor(s/60), r=s-m*60; return m? `${m}:${r.toFixed(3).padStart(6,"0")}` : r.toFixed(3); }
+const gapPct = x => x.mejor && x.ref ? (x.mejor/x.ref-1)*100 : null;
+const ideal = x => (x.s1&&x.s2&&x.s3) ? x.s1+x.s2+x.s3 : null;
+const fmtD = d => { const [y,m,dd]=d.split("-"); return `${+dd}/${+m}/${y.slice(2)}`; };
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,2400); }
+const byOrder = (a,b) => a.fecha.localeCompare(b.fecha) || a.evento.localeCompare(b.evento) || (a.orden||0)-(b.orden||0);
+const filt = () => state.sesiones.filter(s => state.piloto==="todos" || s.piloto===state.piloto).sort(byOrder);
+function eventos(){ const m=new Map(); for(const s of state.sesiones){ if(!m.has(s.evento)) m.set(s.evento,{id:s.evento,nombre:s.eventoNombre,fechaN:s.fechaN,circuito:s.circuito,km:s.km,fecha:s.fecha,pilotos:new Set()}); const e=m.get(s.evento); e.pilotos.add(s.piloto); if(s.fecha<e.fecha) e.fecha=s.fecha; } return [...m.values()].sort((a,b)=>b.fecha.localeCompare(a.fecha)); }
+
+/* ---------- navigation ---------- */
+$("#pilotSeg").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; state.piloto=b.dataset.p;
+  document.querySelectorAll("#pilotSeg button").forEach(x=>x.setAttribute("aria-pressed", x===b)); try{localStorage.setItem("box12p2",state.piloto)}catch(_){} render(); });
+$("#tabs").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; go(b.dataset.t); });
+function go(t){ state.tab=t; if(t!=="cargar") state.edit=null; document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-selected", x.dataset.t===t)); render(); scrollTo({top:0}); }
+try{ const p=localStorage.getItem("box12p2"); if(p&&(p==="todos"||PIL[p])){ state.piloto=p; document.querySelectorAll("#pilotSeg button").forEach(x=>x.setAttribute("aria-pressed", x.dataset.p===p)); } }catch(_){}
+
+/* ---------- render ---------- */
+function render(){
+  const v=$("#view");
+  if(state.dbOk===false){
+    if(state.dbErr==="pin"){ v.innerHTML=`<form class="panel empty" id="pinForm" style="max-width:420px;margin:0 auto"><h2>Clave del equipo</h2><p>Pedile la clave a quien administra la app. Queda guardada en este celular.</p><div class="f" style="width:100%"><label for="pinIn">Clave</label><input id="pinIn" type="password" autocomplete="current-password" required></div><button class="btn primary" type="submit">Entrar</button>${getPin()?'<p class="note" style="color:var(--bad)">La clave guardada no es correcta.</p>':""}</form>`;
+      $("#pinForm").onsubmit=e=>{ e.preventDefault(); setPin($("#pinIn").value.trim()); conectar(); }; return; }
+    v.innerHTML=`<div class="panel empty"><h2>No se pudo conectar</h2><p>Revisá la conexión a internet y volvé a intentar.</p><button class="btn primary" id="retry">Reintentar</button></div>`; $("#retry").onclick=conectar; return; }
+  if(state.dbOk===null){ v.innerHTML=`<div class="panel empty">Conectando con la base de datos…</div>`; return; }
+  ({resumen:rResumen, tiempos:rTiempos, reco:rReco, setup:rSetup, cargar:rCargar})[state.tab](v);
+}
+
+function stats(p){
+  const ss=state.sesiones.filter(s=>s.piloto===p);
+  const conT=ss.filter(s=>s.mejor&&s.tipo!=="acumulado");
+  const clas=ss.filter(s=>s.tipo==="clasificacion"&&s.pos&&s.estado==="ok").map(s=>s.pos);
+  const fin=ss.filter(s=>s.tipo==="final");
+  const finOk=fin.filter(s=>s.estado==="ok"&&s.pos).map(s=>s.pos);
+  const gaps=conT.map(gapPct).filter(x=>x!=null);
+  const prom=gaps.length? gaps.reduce((a,b)=>a+b,0)/gaps.length : null;
+  const best=conT.length? conT.reduce((a,b)=>gapPct(a)<gapPct(b)?a:b) : null;
+  const pot=conT.filter(ideal).map(s=>s.mejor-ideal(s)); const potP=pot.length? pot.reduce((a,b)=>a+b,0)/pot.length : null;
+  return {n:ss.length, ev:new Set(ss.map(s=>s.evento)).size, clas:clas.length?Math.min(...clas):null, finOk, fin:fin.length, nt:fin.length-finOk.length, prom, best, potP};
+}
+
+function rResumen(v){
+  const ps = state.piloto==="todos" ? ["acosta","sandoval"] : [state.piloto];
+  if(!state.sesiones.length){ v.innerHTML=emptyHTML(); return; }
+  const cards = ps.map(p=>{ const s=stats(p); if(!s.n) return `<section class="panel pcard" style="--c:${PIL[p].c}"><header><h2>${PIL[p].n} <span class="lbl">#${PIL[p].num}</span></h2></header><p class="note">Todavía no hay sesiones cargadas.</p></section>`;
+    return `<section class="panel pcard" style="--c:${PIL[p].c}">
+      <header><h2>${PIL[p].n} <span class="lbl">#${PIL[p].num}</span></h2><span class="lbl">${s.ev} ${s.ev===1?"fecha":"fechas"} · ${s.n} sesiones</span></header>
+      <div class="kv">
+        <div><span class="lbl">Mejor clasificación</span><b>${s.clas?s.clas+"°":"—"}</b></div>
+        <div><span class="lbl">Finales</span><b>${s.finOk.length?s.finOk.map(x=>x+"°").join(" · "):"—"}</b><span class="s">${s.nt?s.nt+" sin clasificar":"todas terminadas"}</span></div>
+        <div><span class="lbl">Diferencia media al 1°</span><b>${s.prom!=null?"+"+s.prom.toFixed(2)+"%":"—"}</b><span class="s">en vuelta, todas las sesiones</span></div>
+        <div><span class="lbl">Sesión más cerca</span><b>${s.best?"+"+gapPct(s.best).toFixed(2)+"%":"—"}</b><span class="s">${s.best?esc(s.best.sesion)+" · "+esc(s.best.circuito):""}</span></div>
+        <div><span class="lbl">Vuelta ideal vs real</span><b>${s.potP!=null?"−"+s.potP.toFixed(3)+" s":"—"}</b><span class="s">promedio que queda en los sectores</span></div>
+      </div></section>`; }).join("");
+  v.innerHTML = `<div class="toprow"><h2>Historial</h2><span class="hint">${state.piloto==="todos"?"Los dos pilotos":PIL[state.piloto].n} · ${eventos().filter(e=>state.piloto==="todos"||e.pilotos.has(state.piloto)).length} fines de semana</span></div>
+    <div class="stats">${cards}</div>
+    <section class="panel" style="padding:14px;display:flex;flex-direction:column;gap:10px"><div class="toprow"><h3>Fin de semana por fin de semana</h3><span class="lbl">posición · mejor vuelta</span></div>${tablaFindes()}</section>
+    <section class="panel chartbox"><div class="toprow"><h3>Distancia al más rápido de cada sesión</h3><span class="lbl">% sobre la mejor vuelta</span></div>
+      <div class="scroll">${chartGap()}</div>
+      <div class="legend">${ps.map(p=>`<span><i class="dot ${p}"></i>${PIL[p].s}</span>`).join("")}<span>● grande = clasificación o carrera</span><span>Más abajo es mejor</span></div>
+    </section>
+    <section class="panel chartbox"><div class="toprow"><h3>Posición por sesión</h3><span class="lbl">sobre el total con tiempo</span></div>
+      <div class="scroll">${chartPos()}</div></section>
+    <section class="panel" style="padding:14px;display:flex;flex-direction:column;gap:10px"><div class="toprow"><h3>Mejor vuelta por circuito</h3><span class="lbl">récord propio</span></div>${tablaRecords()}</section>
+    <section class="panel" style="padding:14px;display:flex;flex-direction:column;gap:10px"><div class="toprow"><h3>Historial de presiones</h3><span class="lbl">psi · DI DD / TI TD</span></div>${tablaPresiones()}</section>`;
+  v.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>{ state.open=b.dataset.goto; go("tiempos"); setTimeout(()=>{ const el=document.querySelector(`[data-id="${CSS.escape(b.dataset.goto)}"]`); el&&el.scrollIntoView({block:"center"}); },50); }));
+}
+
+const posTxt = s => !s ? "" : s.estado==="NT" ? `<span class="chip nt">NC</span>` : s.estado==="sin tiempo" ? `<span class="chip st">S/T</span>` : s.pos ? `<b>${s.pos}°</b><span class="sub">/${s.inscriptos||"?"}</span>` : "—";
+function tablaFindes(){
+  const ss=filt(); if(!ss.length) return `<p class="note">Sin datos.</p>`;
+  const g=new Map(); ss.forEach(s=>{ const k=s.evento+"|"+s.piloto; if(!g.has(k)) g.set(k,[]); g.get(k).push(s); });
+  const rows=[...g.values()].sort((a,b)=>b[0].fecha.localeCompare(a[0].fecha)).map(l=>{
+    const e=l[0], ent=l.filter(s=>s.tipo==="entrenamiento"&&s.pos&&s.estado==="ok"), mejEnt=ent.length?ent.reduce((a,b)=>a.pos<b.pos?a:b):null;
+    const find=t=>l.find(s=>s.tipo===t), conT=l.filter(s=>s.mejor&&s.tipo!=="acumulado");
+    const bestLap=conT.length?conT.reduce((a,b)=>a.mejor<b.mejor?a:b):null, bestGap=conT.length?Math.min(...conT.map(gapPct)):null;
+    const cell=s=>`<td class="c">${s?`<button class="cellbtn" data-goto="${esc(s.id)}">${posTxt(s)}</button>`:'<span class="sub">—</span>'}</td>`;
+    return `<tr><th><span class="evn"><i class="dot ${e.piloto}"></i><span><b>${esc(e.fechaN)}</b> · ${esc(e.circuito)}<br><span class="sub">${fmtD(e.fecha)} · ${esc(e.eventoNombre)}</span></span></span></th>
+      ${cell(mejEnt)}${cell(find("tanques"))}${cell(find("clasificacion"))}${cell(find("serie"))}${cell(find("final"))}
+      <td>${bestLap?fmtT(bestLap.mejor):"—"}</td><td style="color:${bestGap==null?"var(--muted)":bestGap<0.6?"var(--ok)":bestGap<1.5?"var(--warn)":"var(--bad)"}">${bestGap!=null?"+"+bestGap.toFixed(2)+"%":"—"}</td></tr>`; }).join("");
+  return `<div class="tablewrap"><table class="cmp hist"><thead><tr><th>Fin de semana</th><th class="c">Mejor entreno</th><th class="c">Tanq. llenos</th><th class="c">Clasif.</th><th class="c">Serie</th><th class="c">Final</th><th>Mejor vuelta</th><th>Al 1°</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function tablaRecords(){
+  const m=new Map(); filt().filter(s=>s.mejor&&s.tipo!=="acumulado").forEach(s=>{ const k=s.piloto+"|"+s.circuito; const c=m.get(k); if(!c||s.mejor<c.mejor) m.set(k,s); });
+  if(!m.size) return `<p class="note">Sin datos.</p>`;
+  return `<div class="tablewrap"><table class="cmp hist"><thead><tr><th>Circuito</th><th>Vuelta</th><th>S1 · S2 · S3</th><th>Dónde</th></tr></thead><tbody>${[...m.values()].sort((a,b)=>a.circuito.localeCompare(b.circuito)).map(s=>`<tr><th><span class="evn"><i class="dot ${s.piloto}"></i><span><b>${esc(s.circuito)}</b><br><span class="sub">${s.km?String(s.km).replace(".",",")+" km":""}</span></span></span></th><td><b>${fmtT(s.mejor)}</b></td><td>${s.s1?fmtT(s.s1)+" · "+fmtT(s.s2)+" · "+fmtT(s.s3):"—"}</td><td><button class="cellbtn" data-goto="${esc(s.id)}">${esc(s.sesion)}, ${esc(s.fechaN)}</button></td></tr>`).join("")}</tbody></table></div>`;
+}
+function tablaPresiones(){
+  const ss=filt().filter(s=>s.auto&&["pfDD","pfDI","pfTD","pfTI","pcDD","pcDI","pcTD","pcTI"].some(k=>s.auto[k])).reverse();
+  if(!ss.length) return `<p class="note">Todavía no hay presiones cargadas. En Tiempos, abrí una sesión y tocá "Cargar presiones y datos". Acá se van a ver todas juntas, con la vuelta y la temperatura de pista de cada salida.</p>`;
+  const q=(a,k)=>esc(a[k]||"–");
+  return `<div class="tablewrap"><table class="cmp hist"><thead><tr><th>Sesión</th><th>Frío</th><th>Caliente</th><th>Pista</th><th>Vuelta</th><th>Balance</th></tr></thead><tbody>${ss.map(s=>{const a=s.auto;return `<tr><th><span class="evn"><i class="dot ${s.piloto}"></i><button class="cellbtn" data-goto="${esc(s.id)}" style="text-align:left"><b>${esc(s.sesion)}</b><br><span class="sub">${esc(s.fechaN)} · ${esc(s.circuito)}</span></button></span></th>
+    <td>${q(a,"pfDI")} ${q(a,"pfDD")}<br>${q(a,"pfTI")} ${q(a,"pfTD")}</td><td>${q(a,"pcDI")} ${q(a,"pcDD")}<br>${q(a,"pcTI")} ${q(a,"pcTD")}</td>
+    <td>${a.tPista?esc(a.tPista)+"°":"–"}</td><td>${fmtT(s.mejor)}${gapPct(s)!=null?`<br><span class="sub">+${gapPct(s).toFixed(2)}%</span>`:""}</td><td style="white-space:normal;min-width:120px;font-family:var(--f-body)">${esc(a.balance||"–")}</td></tr>`;}).join("")}</tbody></table></div>`;
+}
+
+function seriesPts(){ return filt().filter(s=>s.tipo!=="acumulado"); }
+function chartGap(){
+  const pts=seriesPts().filter(s=>gapPct(s)!=null); if(!pts.length) return `<p class="note">Sin datos.</p>`;
+  const W=Math.max(560,pts.length*44+70), H=240, L=44, R=16, T=14, B=56;
+  const max=Math.max(1,Math.ceil(Math.max(...pts.map(gapPct))));
+  const step=max>6?2:max>3?1:0.5;
+  const x=i=>L+(pts.length===1?(W-L-R)/2:i*(W-L-R)/(pts.length-1)), y=g=>T+(g/max)*(H-T-B);
+  let g=""; for(let t=0;t<=max+1e-9;t+=step){ g+=`<line x1="${L}" x2="${W-R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--soft)"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${t.toFixed(step<1?1:0)}%</text>`; }
+  let lines="", dots="", labs="", evPrev=null;
+  for(const p of ["acosta","sandoval"]){ const idx=pts.map((s,i)=>[s,i]).filter(([s])=>s.piloto===p); if(idx.length>1){
+    // cortar línea entre fines de semana
+    let d=""; idx.forEach(([s,i],k)=>{ const nuevo=k===0||idx[k-1][0].evento!==s.evento; d+=`${nuevo?"M":"L"}${x(i).toFixed(1)},${y(gapPct(s)).toFixed(1)} `; });
+    lines+=`<path d="${d}" fill="none" stroke="${PIL[p].c}" stroke-width="2"/>`; } }
+  pts.forEach((s,i)=>{ const big=s.tipo==="clasificacion"||s.tipo==="final"||s.tipo==="serie";
+    if(s.evento!==evPrev){ if(i>0) g+=`<line x1="${(x(i)+x(i-1))/2}" x2="${(x(i)+x(i-1))/2}" y1="${T}" y2="${H-B+40}" stroke="var(--line)" stroke-dasharray="3 3"/>`;
+      labs+=`<text x="${x(i)}" y="${H-6}" font-size="10" fill="var(--ink)" font-weight="600">${esc(s.fechaN)} · ${esc(s.circuito.replace("General ","Gral. "))}</text>`; evPrev=s.evento; }
+    dots+=`<circle cx="${x(i)}" cy="${y(gapPct(s))}" r="${big?6:4}" fill="${big?PIL[s.piloto].c:"var(--panel)"}" stroke="${PIL[s.piloto].c}" stroke-width="2"><title>${esc(s.sesion)} ${fmtT(s.mejor)} (+${gapPct(s).toFixed(2)}%)</title></circle>`;
+    labs+=`<text x="${x(i)}" y="${H-B+16}" font-size="9" fill="var(--muted)" text-anchor="middle">${short(s)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Diferencia porcentual con la mejor vuelta de cada sesión">${g}${lines}${dots}${labs}</svg>`;
+}
+function short(s){ return {entrenamiento:"E"+(s.sesion.match(/\d/)||[""])[0],tanques:"TL",clasificacion:"CL",serie:"SR",final:"FIN"}[s.tipo]||"?"; }
+function chartPos(){
+  const pts=seriesPts().filter(s=>s.pos&&s.inscriptos); if(!pts.length) return `<p class="note">Sin datos.</p>`;
+  const rowH=26, W=560, L=150, R=40, H=pts.length*rowH+24, maxI=Math.max(...pts.map(s=>s.inscriptos));
+  const x=n=>L+(n-1)/(maxI-1)*(W-L-R);
+  let out=""; for(let n=1;n<=maxI;n+= (maxI>20?5:2)){ out+=`<line x1="${x(n)}" x2="${x(n)}" y1="0" y2="${H-20}" stroke="var(--soft)"/><text x="${x(n)}" y="${H-6}" font-size="10" text-anchor="middle" fill="var(--muted)">${n}°</text>`; }
+  pts.forEach((s,i)=>{ const yy=i*rowH+13, c=PIL[s.piloto].c;
+    out+=`<text x="0" y="${yy+4}" font-size="11" fill="var(--ink)">${esc(s.fechaN)} · ${esc(short(s))}</text>
+    <line x1="${x(1)}" x2="${x(s.inscriptos)}" y1="${yy}" y2="${yy}" stroke="var(--line)" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="${x(s.pos)}" cy="${yy}" r="6" fill="${c}"/><text x="${x(s.inscriptos)+8}" y="${yy+4}" font-size="11" fill="var(--muted)">${s.pos}/${s.inscriptos}</text>`; });
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Posición en cada sesión">${out}</svg>`;
+}
+
+function rTiempos(v){
+  const ss=filt(); if(!ss.length){ v.innerHTML=emptyHTML(); return; }
+  const groups=new Map(); for(const s of ss){ const k=s.evento+"|"+s.piloto; if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(s); }
+  const html=[...groups.values()].sort((a,b)=>b[0].fecha.localeCompare(a[0].fecha)).map(list=>{ const e=list[0];
+    return `<section class="panel event"><header><div><h2>${esc(e.eventoNombre)}</h2><div class="meta">${esc(e.fechaN)} · ${esc(e.circuito)} ${e.km?e.km.toString().replace(".",",")+" km":""} · desde ${fmtD(e.fecha)}</div></div>
+      <span class="lbl" style="display:flex;align-items:center;gap:6px"><i class="dot ${e.piloto}"></i>${PIL[e.piloto].n}</span></header>
+      ${list.map(rowHTML).join("")}</section>`; }).join("");
+  v.innerHTML = html;
+  v.querySelectorAll(".row>button").forEach(b=>b.addEventListener("click",()=>{ state.open = state.open===b.dataset.id?null:b.dataset.id; render(); }));
+  v.querySelectorAll("[data-edit]").forEach(b=>b.addEventListener("click",()=>{ state.edit=b.dataset.edit; go("cargar"); }));
+  v.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>delSesion(b)));
+}
+function rowHTML(s){
+  const g=gapPct(s), id=ideal(s), open=state.open===s.id;
+  const chip = s.estado==="NT"?`<span class="chip nt">No clasif.</span>`: s.estado==="sin tiempo"?`<span class="chip st">Sin tiempo</span>`:"";
+  return `<div class="row"><button type="button" data-id="${esc(s.id)}" aria-expanded="${open}">
+    <span class="name"><strong>${esc(s.sesion)} ${chip}${s.auto&&(s.auto.pfDD||s.auto.pcDD)?' <span class="chip ok">psi</span>':""}</strong><span>${fmtD(s.fecha)}${s.vueltas!=null?" · "+s.vueltas+" v.":""}${s.total?" · "+esc(s.total):""}</span></span>
+    <span class="pos">${s.pos?s.pos+"°":"—"}<small>${s.inscriptos?"de "+s.inscriptos:""}</small></span>
+    <span class="lap">${fmtT(s.mejor)}</span>
+    <span class="gap" style="color:${g==null?"var(--muted)":g<0.6?"var(--ok)":g<1.5?"var(--warn)":"var(--bad)"}">${g!=null?"+"+(s.mejor-s.ref).toFixed(3):""}</span>
+  </button>${open?`<div class="detail">
+    <div class="sectors"><div><span class="lbl">S1</span><b>${fmtT(s.s1)}</b></div><div><span class="lbl">S2</span><b>${fmtT(s.s2)}</b></div><div><span class="lbl">S3</span><b>${fmtT(s.s3)}</b></div>
+      <div><span class="lbl">Ideal</span><b>${fmtT(id)}</b>${id&&s.mejor?`<span class="note">${(s.mejor-id).toFixed(3)} s a ganar</span>`:""}</div></div>
+    <div class="note">Mejor de la sesión: <span class="t">${fmtT(s.ref)}</span>${g!=null?` · diferencia ${(s.mejor-s.ref).toFixed(3)} s (+${g.toFixed(2)}%)`:""}${s.difCarrera?` · a ${s.difCarrera.toFixed(3)} s del ganador`:""}</div>
+    ${s.nota?`<div class="note">${esc(s.nota)}</div>`:""}
+    ${autoResumen(s.auto)?`<div class="lbl">Auto en esta sesión</div><div class="sectors">${autoResumen(s.auto)}</div>`:`<div class="note">Sin presiones ni datos del auto cargados.</div>`}
+    ${s.auto&&s.auto.balance?`<div class="note"><b>Balance:</b> ${esc(s.auto.balance)}</div>`:""}
+    ${s.auto&&s.auto.cambios?`<div class="note"><b>Cambios:</b> ${esc(s.auto.cambios)}</div>`:""}
+    ${s.auto&&s.auto.sensacion?`<div class="note"><b>Piloto:</b> ${esc(s.auto.sensacion)}</div>`:""}
+    <div class="actions"><button class="btn primary" data-edit="${esc(s.id)}">${s.auto&&Object.keys(s.auto).length?"Editar":"Cargar presiones y datos"}</button><button class="btn danger" data-del="${esc(s.id)}">Borrar</button></div>
+  </div>`:""}</div>`;
+}
+async function delSesion(b){
+  if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="Tocá de nuevo para borrar"; setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=""; b.textContent="Borrar"; } },3000); return; }
+  try{ await db.doc("sesiones/"+b.dataset.del).delete(); state.open=null; toast("Sesión borrada"); }catch(e){ toast("No se pudo borrar: "+(e.message||e.code)); }
+}
+
+/* ---------- setup ---------- */
+const SETUP = [
+  ["Neumáticos",[["neuMarca","Marca / modelo"],["neuMedida","Medida"]]],
+  ["Suspensión",[["altDel","Altura delantera (mm)"],["altTras","Altura trasera (mm)"],["caida","Caída del. (°)"],["convergencia","Convergencia (mm)"],["avance","Avance (°)"],["resDel","Resortes del."],["resTras","Resortes tras."],["amDel","Amortiguador del."],["amTras","Amortiguador tras."],["barra","Barra estabilizadora"]]],
+  ["Motor y transmisión",[["chicler","Chicler / carburación"],["encendido","Avance encendido (°)"],["bujias","Bujías"],["relacion","Relación diferencial"],["caja","Caja / escalonamiento"],["rpmMax","RPM máx. en recta"]]],
+  ["Peso y carga",[["nafta","Nafta cargada (L)"],["peso","Peso con piloto (kg)"],["lastre","Lastre (kg)"],["tempAgua","Temp. agua (°C)"]]],
+];
+const setupKey = (ev,p) => ev+"__"+p;
+/* Datos del auto que cambian en cada salida a pista */
+const AUTO = [
+  ["Presiones en frío (psi)",[["pfDD","Del. derecha"],["pfDI","Del. izquierda"],["pfTD","Tras. derecha"],["pfTI","Tras. izquierda"]],"pf"],
+  ["Presiones en caliente (psi)",[["pcDD","Del. derecha"],["pcDI","Del. izquierda"],["pcTD","Tras. derecha"],["pcTI","Tras. izquierda"]],"pc"],
+  ["Pista y gomas",[["tAmb","Temp. ambiente (°C)"],["tPista","Temp. pista (°C)"],["clima","Clima / viento"],["neuJuego","Juego de gomas"],["neuVueltas","Vueltas de uso"],["nafta","Nafta al salir (L)"],["tempAgua","Temp. agua (°C)"],["rpm","RPM máx. en recta"]]],
+];
+const BALANCE = ["","Neutro","Subvirante en entrada","Subvirante en salida","Sobrevirante en entrada","Sobrevirante en salida","Inestable en frenada","Falta tracción"];
+function autoResumen(a){
+  if(!a) return "";
+  const q=(k)=>a[k]?esc(a[k]):"–";
+  const parts=[];
+  if(["pfDD","pfDI","pfTD","pfTI"].some(k=>a[k])) parts.push(`<div><span class="lbl">Frío</span><b>${q("pfDI")} · ${q("pfDD")}<br>${q("pfTI")} · ${q("pfTD")}</b></div>`);
+  if(["pcDD","pcDI","pcTD","pcTI"].some(k=>a[k])) parts.push(`<div><span class="lbl">Caliente</span><b>${q("pcDI")} · ${q("pcDD")}<br>${q("pcTI")} · ${q("pcTD")}</b></div>`);
+  const extra=AUTO[2][1].filter(([k])=>a[k]).map(([k,l])=>`<div><span class="lbl">${l}</span><b>${esc(a[k])}</b></div>`);
+  (a.extra||[]).forEach(c=>extra.push(`<div><span class="lbl">${esc(c.k)}</span><b>${esc(c.v)}</b></div>`));
+  return parts.concat(extra).join("");
+}
+function rSetup(v){
+  const evs=eventos(); if(!evs.length){ v.innerHTML=emptyHTML(); return; }
+  const p = state.piloto==="todos" ? null : state.piloto;
+  if(!state.setupKey || !state.setupKey.includes("__")){ const e=evs.find(e=>!p||e.pilotos.has(p))||evs[0]; state.setupKey=setupKey(e.id, p||[...e.pilotos][0]); }
+  let [evId,pil]=state.setupKey.split("__"); if(p&&pil!==p){ pil=p; state.setupKey=setupKey(evId,pil); }
+  const data=state.setups[state.setupKey]||{}; const custom=data.extra||[];
+  const field=(k,l)=>`<div class="f"><label for="su_${k}">${l}</label><input id="su_${k}" name="${k}" value="${esc(data[k]??"")}"></div>`;
+  v.innerHTML = `<section style="display:flex;flex-direction:column;gap:14px">
+    <div class="toprow"><h2>Setup por carrera</h2><span class="hint">Lo que queda fijo todo el fin de semana. Presiones y temperaturas van en cada sesión.</span></div>
+    <form id="setupForm">
+      <fieldset><legend>Carrera</legend>
+        <div class="f wide"><label for="su_ev">Fin de semana</label><select id="su_ev">${evs.map(e=>`<option value="${esc(e.id)}" ${e.id===evId?"selected":""}>${esc(e.fechaN)} · ${esc(e.circuito)} · ${fmtD(e.fecha)}</option>`).join("")}</select></div>
+        <div class="f"><label for="su_pil">Piloto</label><select id="su_pil">${Object.keys(PIL).map(k=>`<option value="${k}" ${k===pil?"selected":""}>${PIL[k].n}</option>`).join("")}</select></div>
+        <div class="f"><label>Estado</label><div class="hint" style="padding-top:8px">${state.setups[state.setupKey]?"Guardado "+(data.actualizado?new Date(data.actualizado).toLocaleDateString("es-AR"):""):"Sin cargar todavía"}</div></div>
+      </fieldset>
+      ${SETUP.map(([g,fs])=>`<fieldset><legend>${g}</legend>${fs.map(([k,l])=>field(k,l)).join("")}</fieldset>`).join("")}
+      <fieldset><legend>Variables propias</legend><p class="hint f wide" style="margin:0">Cualquier dato extra que quieran seguir: nombre y valor.</p>
+        <div id="customList" style="display:contents">${(custom.length?custom:[{k:"",v:""}]).map(customRow).join("")}</div>
+        <div class="f wide"><button type="button" class="btn" id="addCustom">+ Agregar variable</button></div></fieldset>
+      <fieldset><legend>Notas del piloto</legend>
+        <div class="f wide"><label for="su_balance">Balance (sub/sobreviraje, frenada, tracción)</label><textarea id="su_balance" name="balance">${esc(data.balance||"")}</textarea></div>
+        <div class="f wide"><label for="su_cambios">Cambios hechos durante el fin de semana</label><textarea id="su_cambios" name="cambios">${esc(data.cambios||"")}</textarea></div>
+        <div class="f wide"><label for="su_problemas">Problemas / roturas</label><textarea id="su_problemas" name="problemas">${esc(data.problemas||"")}</textarea></div>
+      </fieldset>
+      <div class="actions"><button class="btn primary" type="submit" id="saveSetup">Guardar setup</button></div>
+    </form>
+    <section class="panel" style="padding:14px;display:flex;flex-direction:column;gap:10px"><h3>Comparar setups de ${PIL[pil].s}</h3>${cmpTable(pil)}</section>
+  </section>`;
+  $("#su_ev").onchange = e => { state.setupKey=setupKey(e.target.value,$("#su_pil").value); render(); };
+  $("#su_pil").onchange = e => { state.setupKey=setupKey($("#su_ev").value,e.target.value); render(); };
+  $("#addCustom").onclick = () => $("#customList").insertAdjacentHTML("beforeend", customRow({k:"",v:""}));
+  $("#customList").addEventListener("click", e=>{ if(e.target.matches("[data-rm]")) e.target.closest(".custom-row").remove(); });
+  $("#setupForm").onsubmit = saveSetup;
+}
+let cid=0; function customRow(c){ cid++; return `<div class="custom-row"><input id="cx_k${cid}" aria-label="Variable" placeholder="Variable (ej. comba trasera)" value="${esc(c.k)}" data-ck><input id="cx_v${cid}" aria-label="Valor" placeholder="Valor" value="${esc(c.v)}" data-cv><button type="button" class="btn" data-rm aria-label="Quitar">✕</button></div>`; }
+async function saveSetup(e){
+  e.preventDefault(); const f=e.target, out={};
+  f.querySelectorAll("input[name],textarea[name]").forEach(i=>{ if(i.value.trim()) out[i.name]=i.value.trim(); });
+  out.extra=[...f.querySelectorAll(".custom-row")].map(r=>({k:r.querySelector("[data-ck]").value.trim(),v:r.querySelector("[data-cv]").value.trim()})).filter(c=>c.k);
+  const [ev,p]=state.setupKey.split("__"); Object.assign(out,{evento:ev,piloto:p,actualizado:new Date().toISOString()});
+  const b=$("#saveSetup"); b.disabled=true;
+  try{ await db.doc("setups/"+state.setupKey).set(out); toast("Setup guardado"); }catch(err){ toast("No se pudo guardar: "+(err.message||err.code)); }
+  b.disabled=false;
+}
+function cmpTable(p){
+  const evs=eventos().filter(e=>state.setups[setupKey(e.id,p)]).reverse();
+  if(!evs.length) return `<p class="note">Cuando guarden setups de dos o más fechas, acá aparecen lado a lado junto con el resultado.</p>`;
+  const res=ev=>{ const ss=state.sesiones.filter(s=>s.evento===ev&&s.piloto===p);
+    const c=ss.find(s=>s.tipo==="clasificacion"), f=ss.find(s=>s.tipo==="final");
+    return {c:c?(c.pos?c.pos+"°":"—"):"—", f:f?(f.estado==="NT"?"NC":f.pos?f.pos+"°":"—"):"—", g:(()=>{const x=ss.filter(s=>gapPct(s)!=null).map(gapPct);return x.length?"+"+Math.min(...x).toFixed(2)+"%":"—"})()}; };
+  const rows=[["Clasificación",ev=>res(ev).c],["Final",ev=>res(ev).f],["Mejor % al 1°",ev=>res(ev).g]];
+  SETUP.forEach(([,fs])=>fs.forEach(([k,l])=>{ if(evs.some(e=>state.setups[setupKey(e.id,p)][k])) rows.push([l,ev=>state.setups[setupKey(ev,p)][k]||""]); }));
+  const extras=new Set(); evs.forEach(e=>(state.setups[setupKey(e.id,p)].extra||[]).forEach(c=>extras.add(c.k)));
+  extras.forEach(k=>rows.push([k,ev=>((state.setups[setupKey(ev,p)].extra||[]).find(c=>c.k===k)||{}).v||""]));
+  return `<div class="tablewrap"><table class="cmp"><thead><tr><th></th>${evs.map(e=>`<th>${esc(e.fechaN)}<br><span class="lbl">${esc(e.circuito)}</span></th>`).join("")}</tr></thead>
+    <tbody>${rows.map(([l,fn])=>`<tr><th>${esc(l)}</th>${evs.map(e=>`<td>${esc(fn(e.id))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+
+/* ---------- cargar ---------- */
+function rCargar(v){
+  const ed = state.edit ? state.sesiones.find(s=>s.id===state.edit) : null;
+  const evs=eventos(); const d=ed||{}; const a=d.auto||{};
+  const tf=(k,l,ph)=>`<div class="f"><label for="c_${k}">${l}</label><input class="t" id="c_${k}" name="${k}" inputmode="decimal" placeholder="${ph||""}" value="${d[k]!=null?fmtT(d[k]):""}"></div>`;
+  const nf=(k,l)=>`<div class="f"><label for="c_${k}">${l}</label><input id="c_${k}" name="${k}" type="number" inputmode="numeric" min="0" value="${d[k]??""}"></div>`;
+  v.innerHTML = `<section style="display:flex;flex-direction:column;gap:14px">
+    <div class="toprow"><h2>${ed?"Editar sesión":"Cargar sesión"}</h2><span class="hint">Copiá los datos de la planilla de Cronomix</span></div>
+    <form id="cForm">
+      <fieldset><legend>Fin de semana</legend>
+        <div class="f wide"><label for="c_ev">Evento</label><select id="c_ev">${evs.map(e=>`<option value="${esc(e.id)}" ${e.id===d.evento?"selected":""}>${esc(e.fechaN)} · ${esc(e.nombre)} · ${esc(e.circuito)}</option>`).join("")}<option value="__nuevo" ${!evs.length?"selected":""}>+ Nuevo fin de semana…</option></select></div>
+        <div id="nuevoEv" style="display:contents" ${evs.length?"hidden":""}>
+          <div class="f wide"><label for="c_evn">Nombre del Gran Premio</label><input id="c_evn" placeholder='GP "Asociación Mar y Valle"'></div>
+          <div class="f"><label for="c_fn">Fecha del campeonato</label><input id="c_fn" placeholder="Fecha 10"></div>
+          <div class="f"><label for="c_circ">Circuito</label><input id="c_circ" list="circs" placeholder="Mar y Valle (corto)"><datalist id="circs">${[...new Set(state.sesiones.map(s=>s.circuito))].map(c=>`<option value="${esc(c)}">`).join("")}</datalist></div>
+          <div class="f"><label for="c_km">Largo (km)</label><input id="c_km" inputmode="decimal" placeholder="2.747"></div>
+        </div>
+      </fieldset>
+      <fieldset><legend>Sesión</legend>
+        <div class="f"><label for="c_pil">Piloto</label><select id="c_pil">${Object.keys(PIL).map(k=>`<option value="${k}" ${(d.piloto||(state.piloto!=="todos"?state.piloto:"acosta"))===k?"selected":""}>${PIL[k].n}</option>`).join("")}</select></div>
+        <div class="f"><label for="c_tipo">Tipo</label><select id="c_tipo">${Object.entries(TIPOS).map(([k,l])=>`<option value="${k}" ${d.tipo===k?"selected":""}>${l}</option>`).join("")}</select></div>
+        <div class="f"><label for="c_ses">Nombre</label><input id="c_ses" value="${esc(d.sesion||"")}" placeholder="1er entrenamiento"></div>
+        <div class="f"><label for="c_fecha">Día</label><input id="c_fecha" type="date" value="${d.fecha||new Date().toISOString().slice(0,10)}"></div>
+        <div class="f"><label for="c_est">Estado</label><select id="c_est">${["ok","NT","sin tiempo"].map(x=>`<option value="${x}" ${(d.estado||"ok")===x?"selected":""}>${x==="ok"?"Con tiempo / clasificado":x==="NT"?"No clasificado (NT)":"Sin tiempo"}</option>`).join("")}</select></div>
+        ${nf("orden","Orden en el fin de semana")}
+      </fieldset>
+      <fieldset><legend>Resultado</legend>
+        ${nf("pos","Posición")}${nf("inscriptos","Total en la planilla")}${tf("mejor","Mejor vuelta","1:13.510")}${tf("ref","Mejor vuelta del 1°","1:13.164")}
+        ${nf("vueltas","Vueltas")}<div class="f"><label for="c_total">Tiempo total</label><input class="t" id="c_total" value="${esc(d.total||"")}" placeholder="20:03.660"></div>${tf("difCarrera","Dif. con el ganador (s)","2.664")}
+        ${tf("s1","S1 mejor")}${tf("s2","S2 mejor")}${tf("s3","S3 mejor")}
+        <div class="f wide"><label for="c_nota">Notas</label><textarea id="c_nota">${esc(d.nota||"")}</textarea></div>
+      </fieldset>
+      ${AUTO.map(([g,fs])=>`<fieldset><legend>${g}</legend>${fs.map(([k,l])=>`<div class="f"><label for="ca_${k}">${l}</label><input id="ca_${k}" data-auto="${k}" ${k.startsWith("p")?'inputmode="decimal"':""} value="${esc(a[k]??"")}"></div>`).join("")}</fieldset>`).join("")}
+      <fieldset><legend>Cómo anduvo el auto</legend>
+        <div class="f"><label for="ca_balance">Balance</label><select id="ca_balance" data-auto="balance">${BALANCE.map(b=>`<option value="${b}" ${a.balance===b?"selected":""}>${b||"Elegir…"}</option>`).join("")}</select></div>
+        <div class="f wide"><label for="ca_cambios">Cambios respecto de la salida anterior</label><textarea id="ca_cambios" data-auto="cambios" placeholder="Ej.: +1 psi atrás, 2 vueltas menos de barra">${esc(a.cambios||"")}</textarea></div>
+        <div class="f wide"><label for="ca_sensacion">Comentario del piloto</label><textarea id="ca_sensacion" data-auto="sensacion">${esc(a.sensacion||"")}</textarea></div>
+      </fieldset>
+      <fieldset><legend>Otros datos de esta sesión</legend><p class="hint f wide" style="margin:0">Cualquier variable que quieran seguir salida por salida.</p>
+        <div id="cAutoExtra" style="display:contents">${((a.extra&&a.extra.length)?a.extra:[{k:"",v:""}]).map(customRow).join("")}</div>
+        <div class="f wide"><button type="button" class="btn" id="cAddExtra">+ Agregar variable</button></div></fieldset>
+      <p class="hint" id="cErr" hidden></p>
+      <div class="actions"><button class="btn primary" type="submit" id="cSave">${ed?"Guardar cambios":"Guardar sesión"}</button>${ed?`<button class="btn" type="button" id="cCancel">Cancelar</button>`:""}</div>
+    </form></section>`;
+  $("#c_ev").onchange=e=>{ $("#nuevoEv").hidden = e.target.value!=="__nuevo"; };
+  if(ed) $("#cCancel").onclick=()=>{ state.edit=null; go("tiempos"); };
+  $("#cAddExtra").onclick=()=>$("#cAutoExtra").insertAdjacentHTML("beforeend", customRow({k:"",v:""}));
+  $("#cAutoExtra").addEventListener("click", e=>{ if(e.target.matches("[data-rm]")) e.target.closest(".custom-row").remove(); });
+  $("#cForm").onsubmit=saveSesion;
+}
+async function saveSesion(e){
+  e.preventDefault(); const err=$("#cErr"); err.hidden=true;
+  const fail=m=>{ err.textContent=m; err.hidden=false; err.style.color="var(--bad)"; };
+  let ev=$("#c_ev").value, meta;
+  if(ev==="__nuevo"){ const n=$("#c_evn").value.trim(), c=$("#c_circ").value.trim(); if(!n||!c) return fail("Completá nombre del Gran Premio y circuito.");
+    const f=$("#c_fecha").value; ev=f.slice(0,7)+"-"+c.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g,"").slice(0,10)+"-"+Date.now().toString(36).slice(-4);
+    meta={eventoNombre:n,fechaN:$("#c_fn").value.trim()||"Fecha",circuito:c,km:parseFloat(($("#c_km").value||"").replace(",","."))||null};
+  } else { const s=state.sesiones.find(s=>s.evento===ev); meta={eventoNombre:s.eventoNombre,fechaN:s.fechaN,circuito:s.circuito,km:s.km}; }
+  const g=id=>$("#c_"+id).value.trim(), num=id=>g(id)===""?null:+g(id), tm=id=>{ const x=parseT(g(id)); return x; };
+  const times={}; for(const k of ["mejor","ref","difCarrera","s1","s2","s3"]){ const x=tm(k); if(Number.isNaN(x)) return fail(`El valor de "${k}" no se entiende. Usá formato 1:13.510 o 27.101.`); times[k]=x; }
+  const ses=g("ses")||TIPOS[$("#c_tipo").value]; const pil=$("#c_pil").value;
+  const doc={...meta, evento:ev, piloto:pil, sesion:ses, tipo:$("#c_tipo").value, fecha:g("fecha"), estado:$("#c_est").value,
+    orden:num("orden")??(state.sesiones.filter(s=>s.evento===ev&&s.piloto===pil).length+1), pos:num("pos"), inscriptos:num("inscriptos"), vueltas:num("vueltas"), total:g("total")||null, nota:g("nota"), ...times};
+  const auto={}; document.querySelectorAll("#cForm [data-auto]").forEach(i=>{ if(i.value.trim()) auto[i.dataset.auto]=i.value.trim(); });
+  auto.extra=[...document.querySelectorAll("#cAutoExtra .custom-row")].map(r=>({k:r.querySelector("[data-ck]").value.trim(),v:r.querySelector("[data-cv]").value.trim()})).filter(c=>c.k);
+  if(!auto.extra.length) delete auto.extra;
+  doc.auto=auto;
+  const id = state.edit || (ev+"__"+pil+"__"+Date.now().toString(36));
+  const b=$("#cSave"); b.disabled=true;
+  try{ await db.doc("sesiones/"+id).set(doc); toast(state.edit?"Cambios guardados":"Sesión guardada"); state.edit=null; state.open=id; go("tiempos"); }
+  catch(x){ fail("No se pudo guardar: "+(x.message||x.code)); b.disabled=false; }
+}
+
+/* ---------- recomendaciones ---------- */
+const reco = {p:null, c:null, ai:"", aiBusy:false, aiErr:"", aiKey:""};
+let sampleFn=null;
+const fs3 = x => (x>=0?"+":"−")+Math.abs(x).toFixed(3);
+function circuitos(p){ return [...new Set(state.sesiones.filter(s=>!p||s.piloto===p).sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(s=>s.circuito))]; }
+
+function insights(p,c){
+  const other = p==="acosta"?"sandoval":"acosta";
+  const all = state.sesiones.filter(s=>s.piloto===p && s.tipo!=="acumulado").sort(byOrder);
+  const ss = all.filter(s=>!c||s.circuito===c);
+  const con = ss.filter(s=>s.mejor&&s.ref);
+  const out=[];
+  if(!ss.length) return [{n:"dato",t:"Sin historial en este circuito",x:`${PIL[p].n} todavía no tiene sesiones cargadas${c?" en "+esc(c):""}. Cargá la primera fecha y acá aparecen las recomendaciones.`}];
+
+  if(!c){
+    // vista general: comparar circuitos
+    const by={}; con.forEach(s=>{ (by[s.circuito]=by[s.circuito]||[]).push(gapPct(s)); });
+    const rank=Object.entries(by).map(([k,v])=>[k,v.reduce((a,b)=>a+b,0)/v.length]).sort((a,b)=>a[1]-b[1]);
+    if(rank.length>1) out.push({n:"dato",t:"Dónde rinde mejor",x:`Más cerca del 1° en <b>${esc(rank[0][0])}</b> (+${rank[0][1].toFixed(2)}% promedio). Donde más cuesta: <b>${esc(rank.at(-1)[0])}</b> (+${rank.at(-1)[1].toFixed(2)}%). Conviene revisar qué setup se usó en el primero y llevar esa base al segundo.`});
+    const evs=[...new Set(con.map(s=>s.evento))];
+    if(evs.length>1){ const best=e=>Math.min(...con.filter(s=>s.evento===e).map(gapPct)); const f=best(evs[0]), l=best(evs.at(-1));
+      out.push({n:l<f?"bien":"ojo",t:l<f?"Viene mejorando":"La diferencia creció",x:`Mejor sesión de la primera fecha cargada: +${f.toFixed(2)}% al 1°. De la última: +${l.toFixed(2)}%. ${l<f?"La tendencia va en la dirección correcta.":"Comparar el setup y las presiones de esas dos fechas para ver qué cambió."}`}); }
+  } else {
+    // 1. referencia y objetivo
+    if(con.length){
+      const best=con.reduce((a,b)=>gapPct(a)<gapPct(b)?a:b), rec=con.reduce((a,b)=>a.mejor<b.mejor?a:b);
+      const poles=state.sesiones.filter(s=>s.circuito===c&&s.tipo==="clasificacion"&&s.ref).map(s=>s.ref), top=Math.min(...state.sesiones.filter(s=>s.circuito===c&&s.ref).map(s=>s.ref));
+      out.push({n:"clave",t:"Objetivo de vuelta",x:`Récord propio: <b class="t">${fmtT(rec.mejor)}</b> (${esc(rec.sesion)}, ${esc(rec.fechaN)}). ${poles.length?`La pole acá fue <b class="t">${fmtT(Math.min(...poles))}</b>`:`La vuelta más rápida registrada es <b class="t">${fmtT(top)}</b>`}: hay que buscar ${fs3(rec.mejor-(poles.length?Math.min(...poles):top)).replace("+","")} s para estar adelante. La sesión más cerca del 1° fue ${esc(best.sesion)} de ${esc(best.fechaN)} (+${gapPct(best).toFixed(2)}%): usar esa configuración como base.`});
+    }
+    // 2. sectores (sin sesiones de pista lenta/mojada: mejor del 1° más de 3% arriba de la referencia del circuito)
+    const refMin=Math.min(...state.sesiones.filter(s=>s.circuito===c&&s.ref).map(s=>s.ref));
+    const seca=s=>s.ref&&s.ref<=refMin*1.03;
+    const sec=ss.filter(s=>s.s1&&s.s2&&s.s3&&s.mejor&&seca(s));
+    if(sec.length>=2){
+      const mins=[1,2,3].map(i=>Math.min(...sec.map(s=>s["s"+i])));
+      const loss=[1,2,3].map(i=>sec.reduce((a,s)=>a+(s["s"+i]-mins[i-1]),0)/sec.length);
+      const w=loss.indexOf(Math.max(...loss)), ideal2=mins.reduce((a,b)=>a+b,0), rec=Math.min(...con.map(s=>s.mejor));
+      out.push({n:"clave",t:`Foco en el S${w+1}`,x:`Es el sector donde más variás: en promedio quedás ${loss[w].toFixed(3)} s arriba de tu mejor S${w+1} (<span class="t">${fmtT(mins[w])}</span>). En S${[1,2,3].filter(i=>i!==w+1).join(" y S")} la pérdida es de ${loss.filter((_,i)=>i!==w).map(x=>x.toFixed(3)).join(" y ")} s. Uniendo tus mejores tres sectores harías <b class="t">${fmtT(ideal2)}</b>, ${(rec-ideal2).toFixed(3)} s menos que tu récord.`});
+    }
+    // 3. compañero de box
+    const pares=ss.map(s=>[s,state.sesiones.find(o=>o.piloto===other&&o.evento===s.evento&&o.sesion===s.sesion)]).filter(([a,b])=>b&&seca(a)&&a.mejor&&b.mejor&&a.s1&&b.s1&&a.s2&&b.s2&&a.s3&&b.s3);
+    if(pares.length){
+      const d=[1,2,3].map(i=>pares.reduce((a,[x,y])=>a+(x["s"+i]-y["s"+i]),0)/pares.length);
+      const peor=d.indexOf(Math.max(...d)), mejor=d.indexOf(Math.min(...d));
+      const txt=d[peor]>0.05?`Contra ${PIL[other].s} perdés más en el <b>S${peor+1}</b> (${fs3(d[peor])} s promedio en ${pares.length} sesiones compartidas): mirar su trazada, punto de frenada o cambio ahí.`:`En los tres sectores estás a la par o por delante de ${PIL[other].s}.`;
+      out.push({n:d[peor]>0.05?"ojo":"bien",t:`Comparado con ${PIL[other].s}`,x:`${txt} ${d[mejor]<-0.05?`Donde sacás ventaja: S${mejor+1} (${fs3(d[mejor])} s).`:""}`});
+    }
+    // 4. clasificación vs carrera
+    const evs=[...new Set(ss.map(s=>s.evento))]; const qr=[];
+    evs.forEach(e=>{ const q=ss.find(s=>s.evento===e&&s.tipo==="clasificacion"&&s.mejor), f=ss.find(s=>s.evento===e&&(s.tipo==="final"||s.tipo==="serie")&&s.mejor); if(q&&f) qr.push(gapPct(f)-gapPct(q)); });
+    if(qr.length){ const m=qr.reduce((a,b)=>a+b,0)/qr.length;
+      out.push(m>0.25?{n:"ojo",t:"Se pierde ritmo en carrera",x:`En carrera la mejor vuelta queda +${m.toFixed(2)} puntos de % más lejos del 1° que en clasificación. Revisar presiones en caliente al terminar la final, desgaste de gomas y la nafta cargada: buscar un setup que aguante más vueltas aunque se pierda algo en la vuelta lanzada.`}
+        :{n:"bien",t:"Buen ritmo de carrera",x:`En carrera mantiene la distancia con el 1° respecto de la clasificación (${m>=0?"+":""}${m.toFixed(2)} puntos de %). El auto aguanta: priorizar la clasificación para largar más adelante.`}); }
+    // 5. evolución del fin de semana
+    evs.forEach(e=>{ const l=con.filter(s=>s.evento===e); if(l.length>=3){ const a=gapPct(l[0]), b=Math.min(...l.slice(1).map(gapPct)); if(a-b>0.3) out.push({n:"dato",t:`Fin de semana ${esc(l[0].fechaN)}: arranque lento`,x:`El primer entrenamiento quedó a +${a.toFixed(2)}% y después bajó a +${b.toFixed(2)}%. Llegar con el setup de la última vez en este circuito ayuda a aprovechar la primera tanda.`}); } });
+  }
+  // 6. confiabilidad
+  const fins=all.filter(s=>s.tipo==="final"), nt=fins.filter(s=>s.estado==="NT");
+  if(nt.length) out.push({n:"ojo",t:"Terminar las finales",x:`${nt.length} de ${fins.length} finales sin clasificar (${nt.map(s=>esc(s.fechaN)).join(", ")}). Antes de cada final: chequeo de temperatura de agua, ajuste de tren delantero y nivel de nafta para la distancia completa. Sumar puntos pesa más que una vuelta rápida.`});
+  // 7. pocas vueltas
+  const cortas=ss.filter(s=>s.estado==="ok"&&s.vueltas!=null&&s.vueltas<=2&&s.tipo==="entrenamiento");
+  if(cortas.length>=2) out.push({n:"dato",t:"Tandas cortas",x:`${cortas.length} entrenamientos con 1 o 2 vueltas. Con tandas de 4 o más vueltas hay más datos para comparar presiones y cambios de setup.`});
+  // 8. presiones
+  const conP=con.filter(s=>s.auto&&(s.auto.pfDD||s.auto.pcDD));
+  if(conP.length>=2){ conP.sort((a,b)=>gapPct(a)-gapPct(b)); const b=conP[0], w=conP.at(-1), q=(a,k)=>a[k]||"–";
+    out.push({n:"clave",t:"Presiones que mejor anduvieron",x:`Mejor sesión con presiones cargadas (${esc(b.sesion)}, ${esc(b.fechaN)}, +${gapPct(b).toFixed(2)}%): frío del. <span class="t">${q(b.auto,"pfDI")}/${q(b.auto,"pfDD")}</span>, tras. <span class="t">${q(b.auto,"pfTI")}/${q(b.auto,"pfTD")}</span>${b.auto.tPista?`, pista ${esc(b.auto.tPista)}°`:""}. Peor (${esc(w.sesion)}, +${gapPct(w).toFixed(2)}%): del. <span class="t">${q(w.auto,"pfDI")}/${q(w.auto,"pfDD")}</span>, tras. <span class="t">${q(w.auto,"pfTI")}/${q(w.auto,"pfTD")}</span>.`}); }
+  else out.push({n:"dato",t:"Faltan presiones",x:`Todavía no hay presiones cargadas${c?" en este circuito":""}. Con dos o más sesiones cargadas, acá aparece con qué presiones anduvo mejor${c?" en "+esc(c):""}.`});
+  return out;
+}
+
+function rReco(v){
+  if(!state.sesiones.length){ v.innerHTML=emptyHTML(); return; }
+  if(!reco.p) reco.p = state.piloto!=="todos"?state.piloto:"acosta";
+  if(state.piloto!=="todos") reco.p=state.piloto;
+  const cs=circuitos(reco.p); if(reco.c===null) reco.c=cs[0]||""; if(reco.c&&!cs.includes(reco.c)) reco.c=cs[0]||"";
+  const ins=insights(reco.p,reco.c);
+  const key=reco.p+"|"+reco.c; if(reco.aiKey!==key){ reco.ai=""; reco.aiErr=""; reco.aiKey=key; }
+  v.innerHTML=`<section style="display:flex;flex-direction:column;gap:14px">
+    <div class="toprow"><h2>Recomendaciones</h2><span class="hint">Calculadas con el historial cargado</span></div>
+    <div class="panel" style="padding:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px">
+      <div class="f"><label for="r_p">Piloto</label><select id="r_p">${Object.keys(PIL).map(k=>`<option value="${k}" ${k===reco.p?"selected":""}>${PIL[k].n} #${PIL[k].num}</option>`).join("")}</select></div>
+      <div class="f"><label for="r_c">Próximo circuito</label><select id="r_c">${cs.map(c=>`<option ${c===reco.c?"selected":""}>${esc(c)}</option>`).join("")}<option value="" ${reco.c===""?"selected":""}>Todos los circuitos</option></select></div>
+    </div>
+    <div class="insights">${ins.map(i=>`<article class="ins ${i.n}"><span class="lbl">${{clave:"Prioridad",ojo:"Atención",bien:"Bien",dato:"Dato"}[i.n]}</span><h4>${i.t}</h4><p>${i.x}</p></article>`).join("")}</div></section>`;
+  $("#r_p").onchange=e=>{ reco.p=e.target.value; reco.c=null; render(); };
+  $("#r_c").onchange=e=>{ reco.c=e.target.value; render(); };
+  const b=$("#r_ai"); if(b) b.onclick=pedirAnalisis;
+}
+function md(t){ const lines=esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").split(/\n/); let h="", inL=false;
+  for(const l of lines){ const m=l.match(/^\s*[-*•]\s+(.*)/); if(m){ if(!inL){h+="<ul>";inL=true;} h+=`<li>${m[1]}</li>`; } else { if(inL){h+="</ul>";inL=false;} const hm=l.match(/^#+\s*(.*)/); if(hm) h+=`<h4>${hm[1]}</h4>`; else if(l.trim()) h+=`<p>${l}</p>`; } }
+  return h+(inL?"</ul>":""); }
+async function pedirAnalisis(){
+  const p=reco.p, c=reco.c, other=p==="acosta"?"sandoval":"acosta";
+  const pick=s=>{ const o={sesion:s.sesion,tipo:s.tipo,fecha:s.fecha,evento:s.fechaN,circuito:s.circuito,km:s.km,estado:s.estado,pos:s.pos,de:s.inscriptos,mejor:fmtT(s.mejor),mejor_del_1:fmtT(s.ref),vueltas:s.vueltas,S1:s.s1,S2:s.s2,S3:s.s3,nota:s.nota}; if(s.auto&&Object.keys(s.auto).length) o.auto=s.auto; return o; };
+  const mine=state.sesiones.filter(s=>s.piloto===p&&(!c||s.circuito===c)).sort(byOrder).map(pick);
+  const mate=state.sesiones.filter(s=>s.piloto===other&&(!c||s.circuito===c)).sort(byOrder).map(pick);
+  const otrosCirc=c?state.sesiones.filter(s=>s.piloto===p&&s.circuito!==c&&s.tipo!=="acumulado").sort(byOrder).map(s=>({evento:s.fechaN,circuito:s.circuito,sesion:s.sesion,pos:s.pos,de:s.inscriptos,dif_pct:gapPct(s)?.toFixed(2),auto:s.auto})):[];
+  const sets=Object.values(state.setups).filter(x=>x.piloto===p);
+  const prompt=`Sos ingeniero de pista de un equipo de Renault 12 en el campeonato de la Federación Chubutense de Automovilismo (Argentina). Escribís en español rioplatense, directo, para el piloto y su mecánico.
+
+Piloto: ${PIL[p].n} (auto #${PIL[p].num}). Próxima carrera: ${c||"circuito a definir"}.
+Tiempos en segundos o m:ss.mmm. "mejor_del_1" es la mejor vuelta de esa sesión. "auto" son presiones (psi, pf=frío, pc=caliente, DD/DI/TD/TI = delantera/trasera derecha/izquierda), temperaturas, balance y cambios.
+
+Historial del piloto${c?" en "+c:""}:
+${JSON.stringify(mine)}
+
+Historial del compañero de box ${PIL[other].n} (#${PIL[other].num})${c?" en "+c:""}:
+${JSON.stringify(mate)}
+${otrosCirc.length?`\nResultados del piloto en otros circuitos (resumen):\n${JSON.stringify(otrosCirc)}\n`:""}
+Setups de fin de semana guardados del piloto:
+${JSON.stringify(sets)}
+
+Armá un plan para la próxima carrera con estas secciones, en viñetas cortas:
+**Objetivo** (vuelta a buscar en clasificación y posición realista, basado en los números)
+**Dónde está el tiempo** (sector a trabajar, comparando sus propios sectores y los del compañero)
+**Setup y presiones de partida** (solo lo que los datos respalden; si no hay datos de presiones o setup, decilo y proponé qué medir)
+**Plan de tandas** (qué probar en cada entrenamiento hasta la final)
+**Qué cargar en la app** (datos que faltan para afinar la próxima recomendación)
+No inventes datos que no están. Máximo 280 palabras.`;
+  reco.aiBusy=true; reco.aiErr=""; reco.ai=""; render();
+  try{
+    const r=await sampleFn(prompt,{modelTier:"default",cache:false,onText:({text})=>{ reco.ai=text; const o=$("#r_out"); if(o) o.innerHTML=md(text); else if(state.tab==="reco") render(); }});
+    reco.ai=r.text;
+  }catch(e){ reco.aiErr = e&&e.code==="not_granted"?"Hace falta permitir el análisis con Claude para esta página.":e&&e.code==="rate_limited"?"Demasiados pedidos seguidos. Probá en un rato.":"No se pudo hacer el análisis: "+((e&&e.message)||"error"); }
+  reco.aiBusy=false; if(state.tab==="reco") render();
+}
+
+function emptyHTML(){ return `<div class="panel empty"><h2>Todavía no hay tiempos</h2><p>Cargá la primera sesión desde la pestaña Cargar sesión con los datos de la planilla.</p><button class="btn primary" onclick="go('cargar')">Cargar sesión</button></div>`; }
+
+/* ---------- data ---------- */
+render();
+/* ---------- datos: API de Netlify (/api/data) ---------- */
+const API="/api/data";
+function getPin(){ try{ return localStorage.getItem("box12pin")||""; }catch(_){ return ""; } }
+function setPin(v){ try{ localStorage.setItem("box12pin",v); }catch(_){} }
+async function api(method,col,id,body){
+  const r=await fetch(`${API}?col=${col}${id?"&id="+encodeURIComponent(id):""}`,{method,headers:{"content-type":"application/json","x-equipo-pin":getPin()},body:body?JSON.stringify(body):undefined,cache:"no-store"});
+  if(r.status===401){ const e=new Error("Clave del equipo incorrecta"); e.code="pin"; throw e; }
+  if(!r.ok){ let m="Error "+r.status; try{ m=(await r.json()).message||m; }catch(_){} const e=new Error(m); e.code="net"; throw e; }
+  return r.json();
+}
+const subs={sesiones:[],setups:[]}, last={};
+async function refresh(col){
+  const docs=await api("GET",col), key=JSON.stringify(docs);
+  if(last[col]===key) return; last[col]=key;
+  const snap={docs:docs.map(({id,...d})=>({id,data:()=>d}))};
+  subs[col].forEach(s=>s.next(snap));
+}
+function makeDb(){ return {
+  collection(col){ return { onSnapshot(next,err){ const s={next,err}; subs[col].push(s); refresh(col).catch(e=>err&&err(e)); return ()=>{ subs[col]=subs[col].filter(x=>x!==s); }; } }; },
+  doc(path){ const [col,id]=path.split("/"); return {
+    async set(d){ await api("PUT",col,id,d); last[col]=null; refresh(col).catch(()=>{}); },
+    async delete(){ await api("DELETE",col,id); last[col]=null; refresh(col).catch(()=>{}); } }; }
+}; }
+setInterval(()=>{ if(document.visibilityState==="visible"&&state.dbOk){ refresh("sesiones").catch(()=>{}); refresh("setups").catch(()=>{}); } },30000);
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&state.dbOk){ refresh("sesiones").catch(()=>{}); refresh("setups").catch(()=>{}); } });
+function conectar(){
+  state.dbOk=null; state.dbErr=null; subs.sesiones=[]; subs.setups=[]; last.sesiones=last.setups=null; render();
+  db=makeDb();
+  db.collection("sesiones").onSnapshot(snap=>{ state.sesiones=snap.docs.map(d=>({id:d.id,...d.data()})); state.dbOk=true; if(state.tab!=="cargar"&&state.tab!=="setup") render(); else if(!document.querySelector("form")) render(); },
+    e=>{ state.dbOk=false; state.dbErr=e.code; render(); });
+  db.collection("setups").onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>m[d.id]=d.data()); state.setups=m; if(state.tab==="setup"){ const ed=document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#setupForm"); if(!ed) render(); } },()=>{});
+}
+conectar();
+</script>
+
+</body>
+</html>
